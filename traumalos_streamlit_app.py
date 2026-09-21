@@ -24,6 +24,35 @@ MODEL_CONFIG = {
 ISS_COL = "ISS score"
 CGS_COL = "CGS score"
 CENTER_COL = "Trauma center"
+CENTER_LABELS = {
+    1: "APHP-Beaujon",
+    2: "APHP-Kremlin-Bicêtre",
+    3: "APHP-Pitié Salpêtrière",
+    4: "APHP-Henri Mondor",
+    5: "APHP-HEGP",
+    6: "Clamart-HIA Percy",
+    7: "Lille-CHRU",
+    8: "Strasbourg-CHRU",
+    9: "Grenoble-CHU",
+    10: "Toulon-HIA Sainte-Anne",
+    11: "Caen-CHU",
+    12: "Nancy-CHU",
+    13: "APHM-Marseille-Nord",
+    14: "Reims-CHU",
+    15: "Lyon-HC-Edouard Herriot",
+    16: "Toulouse-Purpan-CHU",
+    17: "Toulouse-Rangueil-CHU",
+    18: "Clermont-Ferrand-CHRU",
+    20: "Lyon-HC Sud",
+    21: "Hôpitaux Civils de Colmar",
+    22: "Rouen-CHU",
+    26: "Annecy-CHR",
+    27: "Amiens Sud-CHU",
+    29: "Cayenne-CHR",
+    30: "Dijon-CHRU",
+    31: "Tours-CHRU",
+    32: "Saint-Etienne-CHU",
+}
 SAPS_COL = "SAPS II"
 AIS_HEAD_COL = "AIS head neck"
 AIS_CHEST_COL = "AIS chest"
@@ -292,7 +321,23 @@ with input_panel:
 
         iss = st.slider("ISS", 1, 75, 16, 1)
         cgs = st.slider("CGS", 3, 15, 15, 1)
-        trauma_center_display = st.selectbox("Trauma center", list(range(1, 33)), index=0)
+        # Centres réellement présents dans le modèle sélectionné
+        training_categories = get_training_categories(bundle)
+        raw_centers = training_categories[CENTER_COL]
+        available_centers = sorted(
+            {
+                int(float(center))
+                for center in raw_centers
+                if int(float(center)) in CENTER_LABELS
+            }
+        )
+
+        trauma_center_display = st.selectbox(
+            "Trauma center",
+            options=available_centers,
+            format_func=lambda center_id: CENTER_LABELS[center_id],
+            index=0,
+        )
         saps = st.slider("SAPS II", 0, 120, 30, 1)
         ais_head = st.slider("AIS head/neck", 0, 6, 0, 1)
         ais_chest = st.slider("AIS chest", 0, 6, 0, 1)
@@ -354,7 +399,7 @@ if predict_clicked:
                 "Prediction": len(hist) + 1,
                 "ISS": iss,
                 "CGS": cgs,
-                "Trauma center": trauma_center_display,
+                "Trauma center": CENTER_LABELS[trauma_center_display],
                 "SAPS II": saps,
                 "AIS head/neck": ais_head,
                 "AIS chest": ais_chest,
